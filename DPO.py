@@ -23,6 +23,8 @@ prompt_chosen = torch.tensor([[5, 8, 9, 10, 5, 3, 16, 29, 18, 17]], dtype=torch.
 prompt_rejected = torch.tensor([[5, 8, 9, 10, 5, 3, 26, 14, 31, 0]], dtype=torch.int64)
 attention_mask = torch.tensor([[0, 0, 0, 0, 0, 0, 1, 1, 1, 1]], dtype=torch.bool)
 
+labels = torch.tensor([[1] * prompt_chosen.shape[1] + [0] * prompt_rejected.shape[1]], dtype=torch.int64)
+
 x_chosen = {'input_ids': prompt_chosen, 'attention_mask': attention_mask}
 x_rejected = {'input_ids': prompt_rejected, 'attention_mask': attention_mask}
 
@@ -54,11 +56,20 @@ probs_rejected_ref = get_probs(logits_rejected_ref, prompt_rejected)
 probs_rejected = get_probs(logits_rejected, prompt_rejected)
 
 beta = 0.1
-pi_logratios = probs_chosen - probs_rejected差
+pi_logratios = probs_chosen - probs_rejected
 ref_logratios = probs_chosen_ref - probs_rejected_ref
 logits = pi_logratios - ref_logratios
 # logits = (probs_chosen - probs_rejected) - (probs_chosen_ref - probs_rejected_ref)
 losses = -F.logsigmoid(beta * logits) * labels
-print(losses)
 loss = losses.sum(-1) / attention_mask.sum
-print(loss)
+print(losses, loss)
+
+optimizer = AdamW(model.parameters, lr=1e-5)
+loss.backward()
+optimizer.step()
+optimizer.zero_grad()
+
+print(f'Undated model parameters after optimization:')
+for name, param in model.named_parameters():
+    if param.requires_grad:
+        print(f'{name} - {param.grad.norm()}')
