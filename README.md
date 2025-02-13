@@ -28,7 +28,7 @@ pip install torch transformers numpy
 
 2. 运行训练代码：
     ```bash
-    python dpo.py
+    python DPO.py
     ```
 
 3. 查看优化过程和更新后的模型参数。
